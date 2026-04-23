@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🤖 ARIA Belajar AI!</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Fredoka+One&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════ VARIABLES ═══════════════════ */
+:root {
+  --yellow: #FFD93D;
+  --orange: #FF6B35;
+  --teal:   #4ECDC4;
+  --purple: #9B59B6;
+  --green:  #2ECC71;
+  --red:    #E74C3C;
+  --pink:   #FF6B9D;
+  --bg:     #12102a;
+  --panel:  rgba(255,255,255,0.06);
+  --border: rgba(255,255,255,0.10);
+  --touch:  44px;
+}
+
+/* ═══════════════════ RESET ═══════════════════ */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--bg);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  position: fixed; inset:0;
+}
+
+/* ═══════════════════ LOADING ═══════════════════ */
+#loading {
+  position:fixed; inset:0; background:#0f0e17;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  z-index:999; transition:opacity .5s;
+}
+#loading.out { opacity:0; pointer-events:none; }
+.ld-robot { font-size:4rem; animation:ldBounce .65s infinite alternate; }
+@keyframes ldBounce { to { transform:translateY(-14px) rotate(8deg); } }
+.ld-txt { font-family:'Fredoka One',cursive; font-size:1.3rem; color:var(--yellow); margin-top:14px; }
+.ld-bar { width:180px;height:7px;background:rgba(255,255,255,.1);border-radius:10px;margin-top:12px;overflow:hidden; }
+.ld-fill { height:100%;background:linear-gradient(90deg,var(--teal),var(--purple));animation:ldFill 1.4s ease-in-out infinite; }
+@keyframes ldFill { 0%{width:0%}80%{width:100%}100%{width:100%} }
+
+/* ═══════════════════ TOP BAR ═══════════════════ */
+#topbar {
+  flex-shrink:0;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:8px clamp(10px,3vw,20px);
+  background:rgba(0,0,0,.4);
+  border-bottom:1px solid var(--border);
+  gap:8px;
+}
+#scene-label {
+  font-family:'Fredoka One',cursive;
+  font-size:clamp(.85rem,3vw,1.1rem);
+  color:var(--yellow);
+  flex:1; min-width:0;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+#score-pill {
+  background:linear-gradient(135deg,#6c3483,#1a5276);
+  border-radius:50px; padding:5px 14px;
+  font-weight:900; font-size:clamp(.8rem,2.5vw,1rem);
+  display:flex; align-items:center; gap:5px;
+  flex-shrink:0; transition:transform .2s;
+}
+
+/* ═══════════════════ PROGRESS DOTS ═══════════════════ */
+#dots-bar {
+  flex-shrink:0;
+  display:flex; justify-content:center; gap:8px;
+  padding:6px 12px;
+  background:rgba(0,0,0,.2);
+}
+.dot {
+  height:7px; width:28px; border-radius:4px;
+  background:rgba(255,255,255,.15); transition:all .35s;
+}
+.dot.active { background:var(--yellow); box-shadow:0 0 8px var(--yellow); width:38px; }
+.dot.done   { background:var(--green); }
+
+/* ═══════════════════ MAIN LAYOUT ═══════════════════ */
+#main {
+  flex:1; min-height:0;
+  display:flex; flex-direction:column; /* mobile-first: vertical */
+  overflow:hidden;
+}
+
+/* DESKTOP: side-by-side */
+@media (min-width:768px) {
+  #main { flex-direction:row; }
+}
+
+/* ═══════════════════ ROBOT PANEL ═══════════════════ */
+#robot-panel {
+  flex-shrink:0;
+  display:flex; flex-direction:row; align-items:center; gap:10px;
+  padding:10px clamp(10px,3vw,18px);
+  background:rgba(0,0,0,.25);
+  border-bottom:1px solid var(--border);
+  position:relative; overflow:hidden;
+  cursor:pointer; user-select:none;
+}
+
+@media (min-width:768px) {
+  #robot-panel {
+    flex-direction:column; justify-content:flex-end;
+    width:clamp(160px,20vw,220px);
+    border-bottom:none; border-right:1px solid var(--border);
+    padding:0 0 16px 0;
+  }
+}
+
+/* Robot canvas / emoji wrapper */
+#robot-wrap {
+  position:relative;
+  width:80px; height:80px;
+  flex-shrink:0;
+  transition:transform .2s cubic-bezier(.34,1.56,.64,1);
+}
+@media (min-width:768px) {
+  #robot-wrap {
+    width:100%; height:clamp(140px,22vh,220px);
+  }
+}
+#robot-wrap:active { transform:scale(.93) rotate(-5deg); }
+
+/* 2D fallback robot */
+#robot-2d {
+  width:100%; height:100%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:clamp(3rem,8vw,5rem);
+  animation:robot2dFloat 2.5s ease-in-out infinite;
+  transition:transform .15s;
+  position:relative;
+}
+@keyframes robot2dFloat {
+  0%,100%{transform:translateY(0) rotate(0deg);}
+  25%{transform:translateY(-5px) rotate(2deg);}
+  75%{transform:translateY(-3px) rotate(-2deg);}
+}
+#robot-2d .r-eyes { position:absolute; top:38%; width:100%; display:flex; justify-content:center; gap:12px; }
+#robot-2d .r-eye  { width:10px; height:10px; border-radius:50%; background:var(--teal); box-shadow:0 0 6px var(--teal); transition:all .3s; }
+#robot-2d .r-eye.blink { transform:scaleY(.1); }
+
+/* Three.js canvas */
+#three-canvas {
+  position:absolute; inset:0;
+  width:100% !important; height:100% !important;
+  display:none; /* shown when 3D enabled */
+}
+
+/* Speech bubble */
+#speech-bubble {
+  flex:1;
+  background:rgba(255,255,255,.95);
+  color:#1a1a2e;
+  border-radius:16px 16px 16px 6px;
+  padding:9px 13px;
+  font-size:clamp(.72rem,2.2vw,.82rem);
+  font-weight:800; line-height:1.5;
+  box-shadow:0 4px 20px rgba(0,0,0,.3);
+  position:relative;
+  animation:bubbleFloat 3s ease-in-out infinite;
+  max-width:240px;
+}
+@media (min-width:768px) {
+  #speech-bubble {
+    margin:0 12px 0 12px;
+    border-radius:14px 14px 14px 4px;
+    text-align:center;
+    max-width:175px;
+  }
+}
+@keyframes bubbleFloat {
+  0%,100%{transform:translateY(0);}
+  50%{transform:translateY(-4px);}
+}
+#speech-bubble::before {
+  content:'';
+  position:absolute;
+  left:-8px; top:50%; transform:translateY(-50%);
+  border:8px solid transparent;
+  border-right-color:rgba(255,255,255,.95);
+  border-left:0;
+}
+@media (min-width:768px) {
+  #speech-bubble::before { display:none; }
+  #speech-bubble::after {
+    content:'';
+    position:absolute;
+    bottom:-8px; left:18px;
+    border:8px solid transparent;
+    border-top-color:rgba(255,255,255,.95);
+    border-bottom:0;
+  }
+}
+
+/* Robot interaction hint */
+#robot-hint {
+  position:absolute; bottom:2px; right:4px;
+  font-size:.58rem; color:rgba(255,255,255,.3);
+  pointer-events:none;
+}
+@media (min-width:768px) { #robot-hint { display:none; } }
+
+/* ═══════════════════ ACTIVITY PANEL ═══════════════════ */
+#activity-panel {
+  flex:1; min-height:0;
+  display:flex; flex-direction:column;
+  padding:clamp(10px,2vw,14px);
+  gap:10px;
+  overflow-y:auto; overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+}
+
+/* ═══════════════════ SCENE CARD ═══════════════════ */
+.scene-card {
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:clamp(12px,3vw,16px);
+  animation:cardIn .35s cubic-bezier(.34,1.56,.64,1);
+  flex-shrink:0;
+}
+@keyframes cardIn {
+  from{opacity:0;transform:translateY(16px) scale(.97);}
+  to  {opacity:1;transform:translateY(0) scale(1);}
+}
+.scene-title {
+  font-family:'Fredoka One',cursive;
+  font-size:clamp(1rem,3.5vw,1.15rem);
+  margin-bottom:4px;
+}
+.scene-desc {
+  font-size:clamp(.73rem,2vw,.82rem);
+  color:rgba(255,255,255,.6);
+  line-height:1.5;
+  margin-bottom:10px;
+}
+
+/* ═══════════════════ BUTTON ═══════════════════ */
+.btn {
+  border:none; border-radius:14px;
+  padding:0 22px;
+  height:var(--touch);
+  min-height:var(--touch);
+  font-family:'Nunito',sans-serif;
+  font-size:clamp(.9rem,3vw,1rem); font-weight:900;
+  cursor:pointer;
+  transition:all .18s cubic-bezier(.34,1.56,.64,1);
+  touch-action:manipulation;
+}
+.btn:hover  { transform:translateY(-2px) scale(1.04); }
+.btn:active { transform:scale(.96); }
+.btn-primary {
+  background:linear-gradient(135deg,var(--orange),var(--yellow));
+  color:#1a1a1a;
+  box-shadow:0 4px 16px rgba(255,107,53,.4);
+  width:100%;
+}
+.btn:disabled { opacity:.35; pointer-events:none; }
+
+/* ═══════════════════ CHOICE GRID ═══════════════════ */
+.choice-grid { display:grid; gap:8px; }
+.choice-grid.cols-2 { grid-template-columns:1fr 1fr; }
+.choice-grid.cols-3 { grid-template-columns:1fr 1fr 1fr; }
+@media (max-width:380px) {
+  .choice-grid.cols-3 { grid-template-columns:1fr 1fr; }
+}
+
+.choice-card {
+  background:rgba(255,255,255,.06);
+  border:2px solid rgba(255,255,255,.12);
+  border-radius:14px;
+  padding:clamp(10px,2.5vw,12px) 8px;
+  text-align:center; cursor:pointer;
+  transition:all .2s cubic-bezier(.34,1.56,.64,1);
+  user-select:none;
+  min-height:var(--touch);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  touch-action:manipulation;
+}
+.choice-card:hover  { border-color:var(--teal); background:rgba(78,205,196,.12); transform:translateY(-3px); }
+.choice-card:active { transform:scale(.95); }
+.choice-card .ce { font-size:clamp(1.6rem,5vw,2rem); display:block; margin-bottom:3px; }
+.choice-card .cl { font-size:clamp(.68rem,1.8vw,.76rem); font-weight:800; color:rgba(255,255,255,.7); }
+.choice-card.correct { border-color:var(--green); background:rgba(46,204,113,.2); animation:popIn .4s cubic-bezier(.34,1.56,.64,1); }
+.choice-card.wrong   { border-color:var(--red);   background:rgba(231,76,60,.18);  animation:shake .4s; }
+.choice-card.disabled{ pointer-events:none; opacity:.45; }
+
+@keyframes popIn { 0%{transform:scale(1)}50%{transform:scale(1.15) rotate(3deg)}100%{transform:scale(1)} }
+@keyframes shake { 0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)} }
+
+/* ═══════════════════ PATTERN ROW ═══════════════════ */
+.pat-row {
+  display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+  background:rgba(0,0,0,.28); border-radius:13px;
+  padding:10px 12px; margin-bottom:10px;
+}
+.pat-item { font-size:clamp(1.6rem,5vw,1.9rem); line-height:1; }
+.pat-blank {
+  width:clamp(38px,10vw,46px); height:clamp(38px,10vw,46px);
+  border:3px dashed rgba(255,255,255,.4); border-radius:9px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.2rem;
+  animation:blinkB 1.2s infinite;
+}
+@keyframes blinkB { 0%,100%{border-color:rgba(255,255,255,.3)}50%{border-color:var(--yellow)} }
+
+/* ═══════════════════ EXAMPLE ITEMS (S0) ═══════════════════ */
+.ex-row { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:8px; }
+.ex-item {
+  background:rgba(0,0,0,.3); border:2px solid rgba(255,255,255,.1);
+  border-radius:12px; padding:8px 11px;
+  text-align:center; cursor:pointer;
+  transition:all .22s cubic-bezier(.34,1.56,.64,1);
+  position:relative; min-width:clamp(60px,15vw,70px);
+  touch-action:manipulation;
+}
+.ex-item:hover  { transform:scale(1.08) translateY(-2px); }
+.ex-item:active { transform:scale(.95); }
+.ex-emoji { font-size:clamp(1.6rem,5vw,1.9rem); }
+.ex-label { font-size:clamp(.62rem,1.8vw,.68rem); font-weight:800; color:rgba(255,255,255,.5); margin-top:2px; }
+.ex-item.learned { border-color:var(--green); background:rgba(46,204,113,.15); animation:popIn .35s cubic-bezier(.34,1.56,.64,1); }
+.tick {
+  position:absolute; top:-8px; right:-8px;
+  background:var(--green); border-radius:50%;
+  width:20px; height:20px; font-size:.7rem;
+  display:flex; align-items:center; justify-content:center;
+  opacity:0; transition:opacity .3s;
+  box-shadow:0 2px 8px rgba(0,0,0,.3);
+}
+.ex-item.learned .tick { opacity:1; }
+
+/* ═══════════════════ MINI GAME (S4) ═══════════════════ */
+.mg-pool { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:8px; }
+.mg-card {
+  background:rgba(255,255,255,.08); border:2px solid rgba(255,255,255,.15);
+  border-radius:11px; padding:7px 10px; font-size:clamp(1.3rem,4vw,1.5rem);
+  cursor:pointer; transition:all .2s; user-select:none;
+  touch-action:manipulation; min-height:var(--touch); display:flex; align-items:center;
+}
+.mg-card:hover { transform:scale(1.1); border-color:var(--yellow); }
+.mg-card.selected { outline:3px solid var(--yellow); transform:scale(1.1); }
+
+.mg-buckets { display:flex; gap:8px; }
+.mg-bucket {
+  flex:1; border-radius:14px; border:2px dashed rgba(255,255,255,.18);
+  padding:10px; cursor:pointer; transition:all .3s;
+  min-height:80px; touch-action:manipulation;
+}
+.mg-bucket:hover,.mg-bucket.hovered { border-color:var(--yellow); background:rgba(255,217,61,.07); }
+.mg-bucket h3 { font-size:clamp(.75rem,2vw,.85rem); font-weight:900; text-align:center; margin-bottom:6px; }
+.mg-bi { display:flex; flex-wrap:wrap; gap:5px; justify-content:center; min-height:40px; }
+.dropped { font-size:1.4rem; animation:popIn .3s cubic-bezier(.34,1.56,.64,1); }
+
+/* ═══════════════════ TOAST ═══════════════════ */
+#toast {
+  position:fixed; top:50%; left:50%;
+  transform:translate(-50%,-50%) scale(0);
+  z-index:100;
+  background:rgba(12,10,28,.96);
+  border-radius:22px; padding:22px 30px;
+  text-align:center; border:2px solid transparent;
+  backdrop-filter:blur(20px);
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1);
+  pointer-events:none; min-width:220px; max-width:88vw;
+}
+#toast.show { transform:translate(-50%,-50%) scale(1); pointer-events:auto; }
+#toast.good { border-color:var(--green); }
+#toast.bad  { border-color:var(--red); }
+#t-emoji { font-size:2.6rem; display:block; margin-bottom:5px; }
+#t-title { font-family:'Fredoka One',cursive; font-size:1.3rem; margin-bottom:3px; }
+#t-sub   { font-size:.8rem; color:rgba(255,255,255,.6); }
+
+/* ═══════════════════ HINT BUTTON ═══════════════════ */
+#hint-btn {
+  position:fixed; bottom:70px; right:14px; z-index:50;
+  width:46px; height:46px; border-radius:50%;
+  background:rgba(155,89,182,.85);
+  border:2px solid rgba(255,255,255,.2);
+  font-size:1.4rem; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 4px 16px rgba(0,0,0,.4);
+  transition:all .2s cubic-bezier(.34,1.56,.64,1);
+  animation:hintPulse 2.5s ease-in-out infinite;
+}
+#hint-btn:hover { transform:scale(1.15); }
+@keyframes hintPulse { 0%,100%{box-shadow:0 4px 16px rgba(0,0,0,.4)}50%{box-shadow:0 4px 24px rgba(155,89,182,.7)} }
+
+/* ═══════════════════ PARTICLES ═══════════════════ */
+.conf {
+  position:fixed; pointer-events:none; z-index:200;
+  width:10px; height:10px; border-radius:2px;
+  animation:cFall linear forwards;
+}
+@keyframes cFall {
+  from{transform:translateY(-20px) rotate(0);opacity:1;}
+  to  {transform:translateY(105vh)  rotate(720deg);opacity:0;}
+}
+.part {
+  position:fixed; pointer-events:none; z-index:200;
+  font-size:1.5rem;
+  animation:pFloat ease-out forwards;
+}
+@keyframes pFloat {
+  from{opacity:1;transform:translateY(0) scale(1);}
+  to  {opacity:0;transform:translateY(-80px) scale(.4);}
+}
+
+/* ═══════════════════ COMPLETE ═══════════════════ */
+#complete {
+  display:none; position:fixed; inset:0; z-index:150;
+  background:rgba(8,6,20,.97);
+  flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; padding:24px; gap:14px;
+  overflow-y:auto;
+}
+#complete.show { display:flex; }
+.c-title { font-family:'Fredoka One',cursive; font-size:clamp(1.6rem,5vw,2.1rem); color:var(--yellow); text-shadow:0 0 28px rgba(255,217,61,.4); }
+.stats  { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+.sbox   { background:rgba(255,255,255,.08); border-radius:14px; padding:12px 18px; }
+.snum   { font-family:'Fredoka One',cursive; font-size:1.9rem; color:var(--yellow); }
+.slbl   { font-size:.73rem; color:rgba(255,255,255,.5); }
+
+/* ═══════════════════ MOOD INDICATOR ═══════════════════ */
+#mood-badge {
+  position:absolute; top:6px; right:6px; z-index:10;
+  font-size:.65rem; padding:3px 8px;
+  background:rgba(0,0,0,.5); border-radius:50px;
+  border:1px solid var(--border);
+  font-weight:900; color:rgba(255,255,255,.6);
+  transition:all .3s; display:none;
+}
+@media (min-width:768px) { #mood-badge { display:block; } }
+
+/* ═══════════════════ DRAG TRAIL ═══════════════════ */
+.drag-trail {
+  position:fixed; pointer-events:none; z-index:300;
+  width:12px; height:12px; border-radius:50%;
+  background:var(--teal); opacity:.7;
+  animation:trailFade .4s ease-out forwards;
+}
+@keyframes trailFade { to { opacity:0; transform:scale(0); } }
+
+/* ═══════════════════ SCENE-SPECIFIC ═══════════════════ */
+.food-choice {
+  display:flex; align-items:center; gap:10px;
+  background:rgba(0,0,0,.3); border-radius:13px;
+  padding:11px 14px; margin-bottom:10px;
+}
+.progress-bar {
+  height:6px; background:rgba(255,255,255,.1); border-radius:10px;
+  margin-top:5px; overflow:hidden;
+}
+.progress-fill {
+  height:100%; border-radius:10px;
+  background:linear-gradient(90deg,var(--teal),var(--green));
+  transition:width .5s ease;
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading">
+  <div class="ld-robot">🤖</div>
+  <div class="ld-txt">ARIA sedang siap-siap...</div>
+  <div class="ld-bar"><div class="ld-fill"></div></div>
+</div>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <div id="scene-label">🤖 ARIA Belajar AI</div>
+  <div id="score-pill">⭐ <span id="score-num">0</span></div>
+</div>
+
+<!-- DOTS -->
+<div id="dots-bar">
+  <div class="dot active"></div>
+  <div class="dot"></div>
+  <div class="dot"></div>
+  <div class="dot"></div>
+  <div class="dot"></div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+  <!-- Robot Panel -->
+  <div id="robot-panel" onclick="onRobotClick(event)" ontouchstart="onRobotTouch(event)">
+    <div id="robot-wrap">
+      <canvas id="three-canvas"></canvas>
+      <div id="robot-2d">
+        🤖
+        <div class="r-eyes">
+          <div class="r-eye" id="eye-l"></div>
+          <div class="r-eye" id="eye-r"></div>
+        </div>
+      </div>
+    </div>
+    <div id="speech-bubble">Halo! Aku ARIA!<br>Klik aku! 👋</div>
+    <div id="mood-badge">😊 happy</div>
+    <div id="robot-hint">tap me!</div>
+  </div>
+
+  <!-- Activity Panel -->
+  <div id="activity-panel">
+    <div class="scene-card" id="scene-card">
+      <div id="scene-content"></div>
+    </div>
+    <button class="btn btn-primary" id="next-btn" onclick="nextScene()" disabled>Lanjut ➡️</button>
+  </div>
+</div>
+
+<!-- HINT BUTTON -->
+<button id="hint-btn" onclick="giveHint()" title="Minta Hint">💡</button>
+
+<!-- TOAST -->
+<div id="toast">
+  <span id="t-emoji">🎉</span>
+  <div id="t-title">Benar!</div>
+  <div id="t-sub">Lanjut!</div>
+</div>
+
+<!-- COMPLETE -->
+<div id="complete">
+  <div style="font-size:clamp(3rem,8vw,4rem)">🏆</div>
+  <div class="c-title">Kamu Luar Biasa!</div>
+  <div style="font-size:clamp(.8rem,2.5vw,.9rem);color:rgba(255,255,255,.6);max-width:340px;line-height:1.6">
+    Sekarang kamu sudah paham cara AI belajar, kenali pola, buat keputusan, bisa salah, dan makin pintar!
+  </div>
+  <div class="stats">
+    <div class="sbox"><div class="snum" id="fin-score">0</div><div class="slbl">Total Poin</div></div>
+    <div class="sbox"><div class="snum" id="fin-correct">0</div><div class="slbl">Jawaban Benar</div></div>
+    <div class="sbox"><div class="snum">5</div><div class="slbl">Level Selesai</div></div>
+  </div>
+  <button class="btn btn-primary" style="max-width:210px" onclick="restart()">🔄 Main Lagi!</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* ══════════════════════════════════════════════════
+   DEVICE DETECTION
+══════════════════════════════════════════════════ */
+const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || window.innerWidth < 768;
+const isLowEnd  = isMobile && (navigator.hardwareConcurrency || 4) <= 2;
+
+/* ══════════════════════════════════════════════════
+   GLOBAL STATE
+══════════════════════════════════════════════════ */
+const G = {
+  score: 0, correct: 0, scene: 0,
+  mood: 'happy',        // happy | thinking | confused | excited | sad
+  robotClickCount: 0,
+  robotDragging: false,
+  dragOffX: 0, dragOffY: 0,
+  hintUsed: false,
+  lastAction: null,
+};
+
+/* ══════════════════════════════════════════════════
+   ROBOT — BEHAVIOR ENGINE
+══════════════════════════════════════════════════ */
+const MOODS = {
+  happy:    { emoji:'😊', eyes:'#00ffee', text:'happy',     robotFace:'🤖' },
+  thinking: { emoji:'🤔', eyes:'#ffff00', text:'thinking',  robotFace:'🤔' },
+  confused: { emoji:'😵', eyes:'#ff6b6b', text:'bingung',   robotFace:'😵' },
+  excited:  { emoji:'🤩', eyes:'#ff9f43', text:'excited!',  robotFace:'🤩' },
+  sad:      { emoji:'😢', eyes:'#74b9ff', text:'sedih',     robotFace:'😢' },
+};
+
+const ROBOT_CLICKS = [
+  ['Hai hai! Klik terus! 😄', 'happy'],
+  ['Aku geli kalo diklik~ 😂', 'excited'],
+  ['Kamu suka ngeklik ya? 😏', 'thinking'],
+  ['ARIA siap belajar! 💪', 'excited'],
+  ['Ayo kerjakan soalnya! 🎯', 'happy'],
+  ['Kamu baik sekali padaku! 🥺', 'sad'],
+  ['KLIK LAGI DONG! 🎉', 'excited'],
+];
+
+const HINTS = {
+  0: 'Klik semua gambar hewan untuk mengajari ARIA! 🖱️',
+  1: 'Lihat polanya: 🍎🍌 bergantian. Yang ke-5 adalah...?',
+  2: 'Kelinci adalah herbivora — makan sayuran! 🥗',
+  3: 'Sphinx tetap kucing, hanya berbeda penampilan! 🐱',
+  4: 'Hewan = makhluk hidup bergerak. Makanan = yang bisa dimakan! 🍽️',
+};
+
+const CORRECT_REACTIONS = [
+  ['Wah kamu pintar sekali! 🌟', 'excited'],
+  ['YEY! Jawaban benar! 🎉', 'excited'],
+  ['ARIA ikut senang! 🤩', 'excited'],
+  ['Cerdas banget! Terus ya! 💪', 'happy'],
+];
+const WRONG_REACTIONS = [
+  ['Hmm, hampir betul! Coba pikir lagi 🤔', 'thinking'],
+  ['Tidak apa-apa, aku juga pernah salah! 😅', 'sad'],
+  ['Yuk lihat clue-nya! 🔍', 'thinking'],
+];
+
+function setMood(m) {
+  G.mood = m;
+  const md = MOODS[m] || MOODS.happy;
+  document.getElementById('mood-badge').textContent = md.emoji + ' ' + md.text;
+  // Update 2D eyes
+  const eyeColor = md.eyes;
+  ['eye-l','eye-r'].forEach(id => {
+    const e = document.getElementById(id);
+    if(e) { e.style.background=eyeColor; e.style.boxShadow=`0 0 8px ${eyeColor}`; }
+  });
+  // Update 3D if active
+  if (G.use3D) update3DMood(m);
+}
+
+function setSpeech(txt, mood=null) {
+  const el = document.getElementById('speech-bubble');
+  if (!el) return;
+  el.style.transform = 'scale(1.08)';
+  el.innerHTML = txt;
+  setTimeout(()=>{ el.style.transform=''; }, 200);
+  if (mood) setMood(mood);
+}
+
+function reactCorrect() {
+  const r = CORRECT_REACTIONS[Math.floor(Math.random()*CORRECT_REACTIONS.length)];
+  setSpeech(r[0], r[1]);
+  bounceRobot();
+}
+function reactWrong() {
+  const r = WRONG_REACTIONS[Math.floor(Math.random()*WRONG_REACTIONS.length)];
+  setSpeech(r[0], r[1]);
+  shakeRobotFn();
+}
+function bounceRobot() {
+  const w = document.getElementById('robot-wrap');
+  w.style.animation='none';
+  setTimeout(()=>{ w.style.animation=''; w.style.transform='scale(1.2) translateY(-10px)'; }, 10);
+  setTimeout(()=>{ w.style.transform=''; }, 350);
+}
+function shakeRobotFn() {
+  const w = document.getElementById('robot-wrap');
+  w.style.animation='none';
+  let t=0, dir=1;
+  const iv = setInterval(()=>{
+    w.style.transform=`translateX(${dir*8}px)`;
+    dir*=-1; t++;
+    if(t>5){ clearInterval(iv); w.style.transform=''; }
+  },70);
+}
+
+/* ── Robot Click ── */
+function onRobotClick(e) {
+  e.stopPropagation();
+  if (G.robotDragging) return;
+  const idx = G.robotClickCount % ROBOT_CLICKS.length;
+  const [msg, mood] = ROBOT_CLICKS[idx];
+  setSpeech(msg, mood);
+  G.robotClickCount++;
+  spawnPartsAt(e.clientX || window.innerWidth/2, e.clientY || 100, '⭐✨💫');
+  bounceRobot();
+  vibrate(30);
+}
+function onRobotTouch(e) {
+  e.preventDefault();
+  onRobotClick(e.touches[0] || e);
+}
+
+/* ── Robot Drag (desktop) ── */
+function giveHint() {
+  const h = HINTS[G.scene] || 'Perhatikan pilihan yang ada! 🤔';
+  setSpeech('💡 Hint: ' + h, 'thinking');
+  G.hintUsed = true;
+  toast('💡','Hint untuk Kamu!', h, true);
+}
+
+/* ── Blink loop ── */
+function startBlink() {
+  setInterval(()=>{
+    const l=document.getElementById('eye-l'), r=document.getElementById('eye-r');
+    if(!l||!r) return;
+    l.classList.add('blink'); r.classList.add('blink');
+    setTimeout(()=>{ l.classList.remove('blink'); r.classList.remove('blink'); }, 150);
+  }, 3200 + Math.random()*1000);
+}
+
+/* ══════════════════════════════════════════════════
+   THREE.JS — 3D ROBOT (Desktop only, non-low-end)
+══════════════════════════════════════════════════ */
+G.use3D = !isMobile && !isLowEnd && typeof THREE !== 'undefined';
+let scene3, cam3, ren3, robotGrp, robotHead3;
+let eyeMatL3, eyeMatR3, mouthMesh3, antBall3, clk3;
+let _lastFrame3 = 0, _fpsLimit = 40;
+
+function init3D() {
+  if (!G.use3D) return;
+  const cv = document.getElementById('three-canvas');
+  const panel = document.getElementById('robot-wrap');
+  const W = panel.offsetWidth, H = panel.offsetHeight;
+  if (!W || !H) { G.use3D=false; return; }
+
+  cv.style.display = 'block';
+  document.getElementById('robot-2d').style.display = 'none';
+
+  scene3 = new THREE.Scene();
+  scene3.background = new THREE.Color(0x12102a);
+  cam3 = new THREE.PerspectiveCamera(44, W/H, 0.1, 100);
+  cam3.position.set(0, 1.1, 6.8);
+  cam3.lookAt(0, 0.5, 0);
+
+  ren3 = new THREE.WebGLRenderer({ canvas:cv, antialias:true, powerPreference:'low-power' });
+  ren3.setSize(W, H);
+  ren3.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+  ren3.shadowMap.enabled = false; // off for perf
+
+  clk3 = new THREE.Clock();
+
+  // Lights
+  scene3.add(new THREE.AmbientLight(0x8866cc, 0.8));
+  const dl = new THREE.DirectionalLight(0xffffff, 1.2);
+  dl.position.set(3,8,5); scene3.add(dl);
+  const pl1 = new THREE.PointLight(0x4ECDC4, 2.5, 12); pl1.position.set(-3,3,3); scene3.add(pl1);
+  const pl2 = new THREE.PointLight(0xFF6B35, 1.8, 10); pl2.position.set(3,1,2);  scene3.add(pl2);
+
+  buildRobot3D();
+  loop3D();
+
+  const ro = new ResizeObserver(()=>{
+    const W2=panel.offsetWidth, H2=panel.offsetHeight;
+    if (!W2||!H2) return;
+    cam3.aspect=W2/H2; cam3.updateProjectionMatrix();
+    ren3.setSize(W2,H2);
+  });
+  ro.observe(panel);
+}
+
+function ph3(c,s=60){ return new THREE.MeshPhongMaterial({color:c,shininess:s}); }
+function mk3(geo,mat,pos=[0,0,0]){ const m=new THREE.Mesh(geo,mat); m.position.set(...pos); return m; }
+
+function buildRobot3D() {
+  robotGrp = new THREE.Group();
+  robotGrp.position.set(0,.25,0);
+
+  // Body (low-poly)
+  robotGrp.add(mk3(new THREE.BoxGeometry(1.4,1.6,.85), ph3(0x2980b9)));
+  robotGrp.add(mk3(new THREE.BoxGeometry(.85,.55,.1),  ph3(0x1a252f),[0,.1,.44]));
+  [[0x27AE60,-1],[0xF39C12,0],[0xE74C3C,1]].forEach(([c,x])=>
+    robotGrp.add(mk3(new THREE.SphereGeometry(.09,6,6), ph3(c,100),[x*.26,.08,.51])));
+  robotGrp.add(mk3(new THREE.BoxGeometry(1.42,.12,.87), ph3(0x1a6fa0),[0,.55,0]));
+
+  // Head
+  robotHead3 = new THREE.Group();
+  robotHead3.position.y = 1.5; robotGrp.add(robotHead3);
+  robotHead3.add(mk3(new THREE.BoxGeometry(1.3,1.1,1.0), ph3(0x2c3e8c)));
+  robotHead3.add(mk3(new THREE.BoxGeometry(1.05,.85,.05), ph3(0x3d52b0),[0,0,.53]));
+
+  function mkEye3(x) {
+    const g=new THREE.Group(); g.position.set(x,.12,.57); robotHead3.add(g);
+    g.add(mk3(new THREE.CircleGeometry(.18,10), ph3(0x0a0a1a)));
+    const m=new THREE.MeshPhongMaterial({color:0x00ffee,emissive:0x00ffee,emissiveIntensity:1.2});
+    const p=new THREE.Mesh(new THREE.CircleGeometry(.09,10),m); p.position.z=.01; g.add(p);
+    return m;
+  }
+  eyeMatL3=mkEye3(-.3); eyeMatR3=mkEye3(.3);
+
+  const mm=new THREE.MeshPhongMaterial({color:0x00ff99,emissive:0x00ff99,emissiveIntensity:.6});
+  mouthMesh3=mk3(new THREE.BoxGeometry(.52,.09,.05),mm,[0,-.3,.57]);
+  robotHead3.add(mouthMesh3);
+
+  // Antenna
+  robotHead3.add(mk3(new THREE.CylinderGeometry(.04,.04,.55,6),ph3(0x95a5a6),[0,.83,0]));
+  const am=ph3(0xFF6B35,120); am.emissive=new THREE.Color(0xFF6B35); am.emissiveIntensity=.7;
+  antBall3=new THREE.Mesh(new THREE.SphereGeometry(.12,8,8),am);
+  antBall3.position.y=1.13; robotHead3.add(antBall3);
+
+  // Ears
+  [-1,1].forEach(s=>robotHead3.add(mk3(new THREE.BoxGeometry(.12,.45,.45),ph3(0x1a5276),[s*.71,0,0])));
+
+  // Arms (simple)
+  [-1,1].forEach(s=>{
+    robotGrp.add(mk3(new THREE.SphereGeometry(.24,8,8),ph3(0x1a6fa0),[s*.9,.65,0]));
+    robotGrp.add(mk3(new THREE.BoxGeometry(.28,1.05,.28),ph3(0x2980b9),[s*.9,.06,0]));
+  });
+
+  // Legs
+  [-1,1].forEach(s=>{
+    robotGrp.add(mk3(new THREE.BoxGeometry(.34,.95,.34),ph3(0x1f618d),[s*.35,-1.32,0]));
+    robotGrp.add(mk3(new THREE.BoxGeometry(.5,.2,.6),ph3(0x154360),[s*.37,-1.85,.1]));
+  });
+
+  scene3.add(robotGrp);
+}
+
+function loop3D(ts=0) {
+  requestAnimationFrame(loop3D);
+  // FPS throttle
+  if (ts - _lastFrame3 < 1000/_fpsLimit) return;
+  _lastFrame3 = ts;
+
+  const t = clk3.getElapsedTime();
+  robotGrp.position.y = .25 + Math.sin(t*1.2)*.09;
+  robotHead3.rotation.y = Math.sin(t*.85)*.16;
+
+  if (antBall3) {
+    const p=.5+.5*Math.sin(t*3);
+    antBall3.material.emissiveIntensity=.4+p*.8;
+    antBall3.scale.setScalar(.92+p*.12);
+  }
+  ren3.render(scene3, cam3);
+}
+
+function update3DMood(m) {
+  if (!G.use3D) return;
+  const c = m==='happy'?0x00ffee : m==='thinking'?0xffff00 : m==='excited'?0xff9f43 : m==='confused'?0xff4444 : 0x74b9ff;
+  [eyeMatL3,eyeMatR3].forEach(mat=>{ mat.color.setHex(c); mat.emissive.setHex(c); });
+  if (mouthMesh3) mouthMesh3.scale.x = m==='sad'?.55 : 1;
+}
+
+/* ══════════════════════════════════════════════════
+   AUDIO — Web Audio API (lightweight)
+══════════════════════════════════════════════════ */
+let audioCtx = null;
+function getAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function playTone(freq=440, type='sine', dur=.15, gain=.08) {
+  try {
+    const ctx=getAudio(), o=ctx.createOscillator(), g=ctx.createGain();
+    o.type=type; o.frequency.value=freq;
+    g.gain.setValueAtTime(gain,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+dur);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime+dur);
+  } catch(e){}
+}
+function sfxCorrect() { playTone(523,'square',.1); setTimeout(()=>playTone(659,'square',.12),120); setTimeout(()=>playTone(784,'square',.18),250); }
+function sfxWrong()   { playTone(220,'sawtooth',.2,.1); }
+function sfxClick()   { playTone(600,'sine',.07,.05); }
+function sfxPop()     { playTone(880,'sine',.08,.06); }
+
+/* ══════════════════════════════════════════════════
+   VIBRATION
+══════════════════════════════════════════════════ */
+function vibrate(ms=20) { if(navigator.vibrate) navigator.vibrate(ms); }
+
+/* ══════════════════════════════════════════════════
+   UI HELPERS
+══════════════════════════════════════════════════ */
+function inject(html) {
+  const t = document.getElementById('scene-content');
+  if (t) t.innerHTML = html;
+}
+function lockNext(v) {
+  const b = document.getElementById('next-btn');
+  b.disabled = v;
+}
+function disableAll() {
+  document.querySelectorAll('.choice-card').forEach(c=>c.classList.add('disabled'));
+}
+function addPts(p) {
+  G.score += p;
+  document.getElementById('score-num').textContent = G.score;
+  const pill = document.getElementById('score-pill');
+  pill.style.transform = 'scale(1.35)';
+  setTimeout(()=>pill.style.transform='', 220);
+}
+function updateDots(idx) {
+  document.querySelectorAll('.dot').forEach((d,i)=>{
+    d.className = 'dot';
+    if(i<idx) d.classList.add('done');
+    else if(i===idx) d.classList.add('active');
+  });
+}
+function toast(emoji,title,sub,good) {
+  const t=document.getElementById('toast');
+  t.getElementById && (t.id='toast');
+  document.getElementById('t-emoji').textContent=emoji;
+  document.getElementById('t-title').textContent=title;
+  document.getElementById('t-sub').textContent=sub;
+  t.className='show '+(good?'good':'bad');
+  setTimeout(()=>t.className='', 2800);
+}
+function spawnParts(chars, el) {
+  const r=el.getBoundingClientRect();
+  spawnPartsAt(r.left+r.width/2, r.top+r.height/2, chars);
+}
+function spawnPartsAt(x, y, chars) {
+  const a=chars.split('');
+  for(let i=0;i<7;i++){
+    const p=document.createElement('div'); p.className='part';
+    p.textContent=a[i%a.length];
+    p.style.cssText=`left:${x+(Math.random()-.5)*60}px;top:${y}px;animation-duration:${.7+Math.random()*.6}s;animation-delay:${Math.random()*.2}s`;
+    document.body.appendChild(p); setTimeout(()=>p.remove(),1500);
+  }
+}
+function confetti() {
+  const cols=['#FFD93D','#4ECDC4','#FF6B35','#9B59B6','#2ECC71','#FF6B9D'];
+  for(let i=0;i<50;i++){
+    const el=document.createElement('div'); el.className='conf';
+    el.style.cssText=`left:${Math.random()*100}vw;background:${cols[~~(Math.random()*cols.length)]};animation-duration:${1.5+Math.random()*2}s;animation-delay:${Math.random()*.6}s`;
+    document.body.appendChild(el); setTimeout(()=>el.remove(),3800);
+  }
+}
+function dragTrail(x,y) {
+  const d=document.createElement('div'); d.className='drag-trail';
+  d.style.cssText=`left:${x-6}px;top:${y-6}px;`;
+  document.body.appendChild(d); setTimeout(()=>d.remove(),500);
+}
+
+/* ══════════════════════════════════════════════════
+   SCENE 0 — AI Belajar dari Contoh
+══════════════════════════════════════════════════ */
+const S0_DATA = [
+  {e:'🐶',l:'Anjing'},{e:'🐱',l:'Kucing'},{e:'🐸',l:'Katak'},
+  {e:'🐼',l:'Panda'},{e:'🦁',l:'Singa'},{e:'🐧',l:'Penguin'}
+];
+let s0count=0;
+
+function buildS0() {
+  s0count=0; lockNext(true);
+  const items = S0_DATA.map((d,i)=>`
+    <div class="ex-item" id="ex${i}" onclick="learnIt(${i})">
+      <div class="ex-emoji">${d.e}</div>
+      <div class="ex-label">${d.l}</div>
+      <div class="tick">✓</div>
+    </div>`).join('');
+  inject(`
+    <div class="ex-row">${items}</div>
+    <div style="text-align:center;font-size:.77rem;color:rgba(255,255,255,.4);margin-top:5px">
+      Klik semua gambar! (<span id="s0c">0</span>/6)
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="s0bar" style="width:0%"></div></div>`);
+}
+function learnIt(i) {
+  const el=document.getElementById('ex'+i);
+  if(el.classList.contains('learned')) return;
+  el.classList.add('learned'); s0count++;
+  addPts(10); sfxPop(); vibrate(15);
+  document.getElementById('s0c').textContent=s0count;
+  document.getElementById('s0bar').style.width=(s0count/6*100)+'%';
+  const says=['Ooh! Anjing! 🐶','Kucing manis! 😺','Katak hijau! 🐸','Panda lucu! 🐼','Singa! 🦁','Penguin! 🐧'];
+  setSpeech(says[i], 'excited');
+  spawnParts('⭐✨', el);
+  if(s0count===6){
+    setSpeech('Aku sudah belajar 6 hewan! 🎉', 'excited');
+    toast('🎉','ARIA Berhasil Belajar!','Semua 6 hewan sudah dikenal ARIA!',true);
+    confetti(); sfxCorrect(); lockNext(false); vibrate([30,30,60]);
+  }
+}
+
+/* ══════════════════════════════════════════════════
+   SCENE 1 — Kenali Pola
+══════════════════════════════════════════════════ */
+let s1done=false;
+function buildS1() {
+  s1done=false; lockNext(true);
+  inject(`
+    <div style="font-size:.78rem;color:rgba(255,255,255,.5);margin-bottom:7px">Lihat urutannya 👀</div>
+    <div class="pat-row">
+      <span class="pat-item">🍎</span>
+      <span class="pat-item">🍌</span>
+      <span class="pat-item">🍎</span>
+      <span class="pat-item">🍌</span>
+      <div class="pat-blank" id="pb">❓</div>
+    </div>
+    <div style="font-size:.77rem;color:rgba(255,255,255,.45);margin-bottom:10px">
+      Apa yang mengisi <strong style="color:white">❓</strong> ?
+    </div>
+    <div class="choice-grid cols-3">
+      <div class="choice-card" onclick="a1('apel',this)">
+        <span class="ce">🍎</span><span class="cl">Apel</span>
+      </div>
+      <div class="choice-card" onclick="a1('pisang',this)">
+        <span class="ce">🍌</span><span class="cl">Pisang</span>
+      </div>
+      <div class="choice-card" onclick="a1('anggur',this)">
+        <span class="ce">🍇</span><span class="cl">Anggur</span>
+      </div>
+    </div>`);
+}
+function a1(v,el) {
+  if(s1done) return; s1done=true; disableAll(); vibrate(20);
+  if(v==='apel'){
+    el.classList.add('correct');
+    document.getElementById('pb').textContent='🍎';
+    document.getElementById('pb').style.borderColor='var(--green)';
+    addPts(20); G.correct++; sfxCorrect(); reactCorrect();
+    toast('🧠','Pola Terdeteksi!','🍎🍌 bergantian — ke-5 adalah Apel!',true);
+    confetti(); spawnParts('⭐🧠',el);
+  } else {
+    el.classList.add('wrong'); sfxWrong(); reactWrong();
+    toast('🤔','Lihat Lagi!','🍎🍌🍎🍌 bergantian — ke-5 pasti 🍎!',false);
+    vibrate([50,30,50]);
+  }
+  lockNext(false);
+}
+
+/* ══════════════════════════════════════════════════
+   SCENE 2 — Keputusan AI
+══════════════════════════════════════════════════ */
+let s2done=false;
+function buildS2() {
+  s2done=false; lockNext(true);
+  inject(`
+    <div class="food-choice">
+      <span style="font-size:2.8rem">🐰</span>
+      <div>
+        <div style="font-weight:900;font-size:.95rem">Kelinci Lapar! 🥺</div>
+        <div style="font-size:.77rem;color:rgba(255,255,255,.55)">Pilihkan makanan yang cocok:</div>
+      </div>
+    </div>
+    <div class="choice-grid cols-3">
+      <div class="choice-card" onclick="a2('wortel',this)">
+        <span class="ce">🥕</span><span class="cl">Wortel</span>
+      </div>
+      <div class="choice-card" onclick="a2('daging',this)">
+        <span class="ce">🍖</span><span class="cl">Daging</span>
+      </div>
+      <div class="choice-card" onclick="a2('pizza',this)">
+        <span class="ce">🍕</span><span class="cl">Pizza</span>
+      </div>
+    </div>`);
+}
+function a2(v,el) {
+  if(s2done) return; s2done=true; disableAll(); vibrate(20);
+  if(v==='wortel'){
+    el.classList.add('correct'); addPts(20); G.correct++; sfxCorrect(); reactCorrect();
+    toast('🎯','Keputusan Tepat!','Kelinci suka sayuran! 🥕🐰',true);
+    confetti(); spawnParts('🥕⭐🎉',el);
+  } else {
+    el.classList.add('wrong'); sfxWrong(); reactWrong();
+    toast('😅','Bukan Itu!','Kelinci = herbivora = sayuran! 🥗',false);
+    vibrate([50,30,50]);
+  }
+  lockNext(false);
+}
+
+/* ══════════════════════════════════════════════════
+   SCENE 3 — AI Bisa Salah
+══════════════════════════════════════════════════ */
+let s3done=false;
+function buildS3() {
+  s3done=false; lockNext(true);
+  setSpeech('Eh... aku bingung! Bantu aku! 😵','confused');
+  inject(`
+    <div style="background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.25);border-radius:13px;padding:10px 13px;margin-bottom:9px">
+      <div style="font-size:.78rem;color:rgba(255,255,255,.6);margin-bottom:5px">📚 ARIA pernah lihat kucing seperti ini:</div>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <span style="font-size:1.8rem">🐱</span>
+        <span style="font-size:1.8rem">🐈</span>
+        <span style="font-size:1.8rem">😺</span>
+        <span style="font-size:.68rem;color:rgba(255,255,255,.4);margin-left:3px">← semua berbulu</span>
+      </div>
+    </div>
+    <div style="text-align:center;background:rgba(0,0,0,.3);border-radius:13px;padding:12px;margin-bottom:9px">
+      <div style="font-size:3rem">🐱‍👤</div>
+      <div style="font-weight:900;font-size:.9rem;margin-top:3px">Kucing Sphinx (tidak berbulu)</div>
+      <div style="font-size:.74rem;color:rgba(255,255,255,.4);margin-top:2px">ARIA bingung — ini kucing atau bukan?</div>
+    </div>
+    <div class="choice-grid cols-2">
+      <div class="choice-card" onclick="a3('kucing',this)">
+        <span class="ce">✅</span><span class="cl">Tetap Kucing!</span>
+      </div>
+      <div class="choice-card" onclick="a3('bukan',this)">
+        <span class="ce">❌</span><span class="cl">Bukan Kucing</span>
+      </div>
+    </div>`);
+}
+function a3(v,el) {
+  if(s3done) return; s3done=true; disableAll(); vibrate(20);
+  if(v==='kucing'){
+    el.classList.add('correct'); addPts(20); G.correct++; sfxCorrect(); reactCorrect();
+    toast('💡','ARIA Belajar Hal Baru!','Sphinx = tetap kucing! AI butuh data beragam!',true);
+    confetti(); spawnParts('💡🐱✨',el);
+  } else {
+    el.classList.add('wrong'); sfxWrong(); reactWrong();
+    toast('🤔','Ternyata...','Sphinx itu kucing! AI butuh lebih banyak contoh.',false);
+    vibrate([50,30,50]);
+  }
+  lockNext(false);
+}
+
+/* ══════════════════════════════════════════════════
+   SCENE 4 — Mini Game Klasifikasi
+══════════════════════════════════════════════════ */
+const S4_DATA = [
+  {e:'🐶',g:'hewan',l:'Anjing'},{e:'🍕',g:'makanan',l:'Pizza'},
+  {e:'🐱',g:'hewan',l:'Kucing'},{e:'🍎',g:'makanan',l:'Apel'},
+  {e:'🐟',g:'hewan',l:'Ikan'},  {e:'🍌',g:'makanan',l:'Pisang'}
+];
+let s4ans={}, s4sel=null;
+
+function buildS4() {
+  s4ans={}; s4sel=null; lockNext(true);
+  const pool = S4_DATA.map((d,i)=>`
+    <div class="mg-card" id="mc${i}" onclick="sel4(${i})">${d.e}</div>`).join('');
+  inject(`
+    <div style="font-size:.77rem;color:rgba(255,255,255,.5);text-align:center;margin-bottom:7px">
+      Klik gambar → lalu klik keranjang! 🧺
+    </div>
+    <div class="mg-pool" id="s4pool">${pool}</div>
+    <div class="mg-buckets">
+      <div class="mg-bucket" id="bk-hewan" onclick="drop4('hewan')">
+        <h3>🐾 Hewan</h3>
+        <div class="mg-bi" id="bi-hewan"></div>
+      </div>
+      <div class="mg-bucket" id="bk-makanan" onclick="drop4('makanan')">
+        <h3>🍽️ Makanan</h3>
+        <div class="mg-bi" id="bi-makanan"></div>
+      </div>
+    </div>
+    <div id="s4st" style="text-align:center;font-size:.75rem;color:rgba(255,255,255,.4);margin-top:6px">Pilih gambar dulu...</div>`);
+}
+function sel4(i) {
+  if(s4ans[i]!==undefined) return;
+  document.querySelectorAll('.mg-card').forEach(c=>{c.classList.remove('selected'); c.style.transform=''; });
+  const el=document.getElementById('mc'+i);
+  el.classList.add('selected'); s4sel=i; sfxClick();
+  document.getElementById('s4st').textContent=`Masukkan: ${S4_DATA[i].e} ${S4_DATA[i].l}`;
+  ['hewan','makanan'].forEach(g=>document.getElementById('bk-'+g).classList.add('hovered'));
+  setSpeech('Pilih keranjangnya! 🧺','thinking');
+}
+function drop4(grp) {
+  if(s4sel===null){ setSpeech('Pilih gambar dulu! 🖱️','confused'); return; }
+  const i=s4sel, d=S4_DATA[i];
+  s4ans[i]=grp; s4sel=null; sfxPop(); vibrate(15);
+  const el=document.getElementById('mc'+i); if(el) el.remove();
+  const sp=document.createElement('span'); sp.className='dropped'; sp.textContent=d.e;
+  document.getElementById('bi-'+grp).appendChild(sp);
+  ['hewan','makanan'].forEach(g=>document.getElementById('bk-'+g).classList.remove('hovered'));
+  const done=Object.keys(s4ans).length;
+  document.getElementById('s4st').textContent=`${done}/6 dimasukkan`;
+  if(done===6) setTimeout(checkS4,400);
+}
+function checkS4() {
+  let ok=0;
+  S4_DATA.forEach((d,i)=>{ if(s4ans[i]===d.g) ok++; });
+  addPts(ok*10); if(ok>=4) G.correct++;
+  if(ok>=5){
+    sfxCorrect(); reactCorrect();
+    toast('🏆',`${ok}/6 Benar!`,'Luar biasa! Kamu berpikir seperti AI!',true);
+    confetti(); vibrate([30,30,60]);
+  } else if(ok>=3){
+    sfxPop();
+    toast('⭐',`${ok}/6 Benar`,'Bagus! Beberapa memang susah.',true);
+    setSpeech('Lumayan! 😊','happy');
+  } else {
+    sfxWrong(); reactWrong();
+    toast('🤔',`${ok}/6 Benar`,'Hewan = makhluk hidup. Makanan = bisa dimakan!',false);
+  }
+  document.getElementById('next-btn').textContent='🏆 Lihat Hasilnya!';
+  lockNext(false);
+}
+
+/* ══════════════════════════════════════════════════
+   SCENE CONFIG
+══════════════════════════════════════════════════ */
+const SCENES = [
+  {
+    title:'🎓 AI Belajar dari Contoh!', color:'#FFD93D',
+    desc:'Klik setiap gambar hewan untuk mengajari ARIA!',
+    speech:'Ajari aku! Klik semua gambarnya! 📚', mood:'happy', build:buildS0
+  },
+  {
+    title:'🔍 AI Mengenali Pola!', color:'#4ECDC4',
+    desc:'ARIA lihat urutan dan cari pola. Bantu ARIA melengkapi!',
+    speech:'Aku lihat polanya... coba kamu! 🔍', mood:'thinking', build:buildS1
+  },
+  {
+    title:'🧠 AI Membuat Keputusan!', color:'#A855F7',
+    desc:'Pilihkan makanan yang tepat untuk hewan ini!',
+    speech:'Hmm... mana yang cocok? 🤔', mood:'thinking', build:buildS2
+  },
+  {
+    title:'😅 AI Bisa Salah!', color:'#FF6B35',
+    desc:'ARIA bingung lihat kucing sphinx. Bantu betulkan ARIA!',
+    speech:'Eh... aku bingung! Bantu aku! 😢', mood:'confused', build:buildS3
+  },
+  {
+    title:'🎮 Jadi AI Sebentar!', color:'#6BCB77',
+    desc:'Pisahkan gambar ke kelompok Hewan atau Makanan!',
+    speech:'Wah, kamu jadi AI sekarang! ⭐', mood:'excited', build:buildS4
+  },
+];
+
+/* ══════════════════════════════════════════════════
+   SCENE MANAGEMENT
+══════════════════════════════════════════════════ */
+function applyScene(idx) {
+  const sc = SCENES[idx];
+  document.getElementById('scene-label').textContent = sc.title;
+  setSpeech(sc.speech, sc.mood);
+  updateDots(idx);
+  document.getElementById('next-btn').textContent = 'Lanjut ➡️';
+  G.hintUsed = false;
+
+  const card = document.getElementById('scene-card');
+  card.innerHTML =
+    `<div class="scene-title" style="color:${sc.color}">${sc.title}</div>
+     <div class="scene-desc">${sc.desc}</div>
+     <div id="scene-content"></div>`;
+  sc.build();
+}
+
+function nextScene() {
+  sfxClick(); vibrate(20);
+  if(G.scene < SCENES.length-1){ G.scene++; applyScene(G.scene); }
+  else showComplete();
+}
+
+function showComplete() {
+  document.getElementById('fin-score').textContent=G.score;
+  document.getElementById('fin-correct').textContent=G.correct;
+  document.getElementById('complete').classList.add('show');
+  confetti(); setTimeout(confetti,700);
+  setSpeech('Kamu Luar Biasa! 🏆','excited');
+}
+
+function restart() {
+  G.score=0; G.correct=0; G.scene=0;
+  document.getElementById('score-num').textContent='0';
+  document.getElementById('complete').classList.remove('show');
+  applyScene(0);
+}
+
+/* ══════════════════════════════════════════════════
+   TOUCH / DRAG INTERACTION (pointer trail)
+══════════════════════════════════════════════════ */
+document.addEventListener('pointermove', e=>{
+  if(e.pointerType==='touch' && Math.random()<.3) dragTrail(e.clientX, e.clientY);
+});
+
+/* ══════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded', ()=>{
+  setTimeout(()=>{
+    if(G.use3D) init3D();
+    startBlink();
+    applyScene(0);
+    setTimeout(()=>{
+      const ld=document.getElementById('loading');
+      ld.classList.add('out');
+      setTimeout(()=>{ if(ld.parentNode) ld.parentNode.removeChild(ld); }, 600);
+    }, 1500);
+  }, 100);
+});
+</script>
+</body>
+</html>
